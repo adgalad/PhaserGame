@@ -14,6 +14,38 @@ function concatArray(a, b) {
 
 
 
+class LatencyMeter {
+
+    constructor(){
+        this.startTime;
+        self = this
+
+        setInterval(function() {
+          self.startTime = Date.now();
+          socket.emit('ping');
+        }, 1000);
+
+        socket.socket.on('pong', function() {
+            var latency = Date.now() - self.startTime;
+            $("#latency").html(Math.floor(latency) + " ms")
+        });
+    }
+
+    addValue(value = undefined) {
+        if (value != undefined && value != null) {
+            this.avg = ((this.avg * this.length) + value)/ (this.length+1)
+
+            this.length += 1
+
+            if (this.length % 20 == 0) {
+
+                console.log(this.avg)
+                this.length = 0;
+                this.avg = 0;
+            }
+        }
+    }
+}
 
 
 
@@ -309,6 +341,7 @@ class Scene1 extends Phaser.Scene {
 
         this.loginData = null
         this.stream = new Int16Array(0)
+
     }
 
     init(data) {
@@ -418,7 +451,6 @@ class Scene1 extends Phaser.Scene {
                         break;
                     case socketEvents.MoveLaser:
                         var data = array.slice(carrier, carrier+4)
-                        console.log(data)
                         carrier += 4
 
                         self.moveLaser(data);
@@ -426,7 +458,6 @@ class Scene1 extends Phaser.Scene {
                     case socketEvents.CreateLaser:
 
                         var data = array.slice(carrier, carrier+6)
-                        console.log(carrier, array.length)
                         carrier += 6
                         self.createLaser(data);
                         break;
@@ -440,63 +471,6 @@ class Scene1 extends Phaser.Scene {
                 }
             }
         })
-
-        // socket.socket.on("update", function(data) {
-        //     var array = new Int16Array(data)
-        //     var moves = []
-        //     for (var i = 0; i < array.length/4; i++) {
-        //         moves.push({
-        //             id: array[i*4],
-        //             position: {x: array[i*4+1], y:array[i*4+2]},
-        //             flip: array[i*4+3]
-        //         })
-        //     }
-        //     self.playersGroup.getChildren().forEach((object) => {
-        //         if (object.id == moves[0].id) {
-        //             object.moves = object.moves.concat(moves)
-        //         }
-        //     })
-        // })
-
-        // socket.socket.on("laser", function(data) {
-        //     var array = new Int16Array(data)
-        //     new Laser(self, array[0], array[1], array[2], array[3], array[4])
-        // })
-
-        // socket.socket.on("updateLaser", function(data) {
-        //     console.log("llego")
-        //     var array = new Int16Array(data)
-        //     var moves = []
-        //     for (var i = 0; i < array.length/3; i++) {
-        //         moves.push({
-        //             id: array[i*3],
-        //             position: {x: array[i*3+1], y:array[i*3+2]},
-        //         })
-        //     }
-        //     self.lasersGroup.getChildren().forEach((laser) => {
-        //         if (laser.id == moves[0].id) {
-        //             laser.moves = laser.moves.concat(moves)
-        //         }
-        //     })
-        // })
-
-        // socket.socket.on("explode", function(data) {
-
-        //     var array = new Int16Array(data)
-        //     console.log(array[0]+ " exploto")
-        //     self.playersGroup.getChildren().forEach((e)=>{
-        //         if (e.id == array[0]) {
-        //             e.explode()
-        //         }
-        //     })
-        //     self.lasersGroup.getChildren().forEach((e) => {
-        //         if (e.id == array[1]) {
-        //             e.destroy()
-        //         }
-        //     })
-        // })
-
-
     }
 
     // addObject(object) {
@@ -510,7 +484,7 @@ class Scene1 extends Phaser.Scene {
     // }
     create(){
 
-
+        this.latency = new LatencyMeter()
         this.anims.create({
             key: "shipLights",
             frames: this.anims.generateFrameNumbers("player"),
@@ -562,7 +536,7 @@ class Scene1 extends Phaser.Scene {
             }
         }
 
-        this.physics.add.collider(this.lasersGroup, this.localGroup, function(laser, player) {
+        this.physics.add.collider(this.lasersGroup, this.playersGroup, function(laser, player) {
             console.log("Exploto")
             if (player.id != laser.playerId && player.exploded == false) {
                 laser.destroy();
@@ -649,6 +623,13 @@ function initGame(){
     config.user = $("#character").val()
     $("#form").remove()
     var game = new Phaser.Game(config)
+    this.game.events.on('hidden',function(){
+        console.log('hidden');
+    },this);
+
+    this.game.events.on('visible',function(){
+        console.log('visible');
+    },this);
 }
 // var socket = new Socket("ws://ec2-3-90-8-99.compute-1.amazonaws.com:25330");
 // var socket = new Socket("ws://0.0.0.0:5000");

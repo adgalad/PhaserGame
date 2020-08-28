@@ -65,6 +65,10 @@ io.on('connection', function (socket) {
         // console.log("EXPLODE")
         socket.broadcast.emit('explode', data)
     })
+
+    socket.on('ping', function(data){
+        socket.emit("pong")
+    })
 });
 
 
