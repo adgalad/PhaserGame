@@ -76,6 +76,7 @@ class Player extends Phaser.GameObjects.Sprite {
         this.scene = scene;
         this.array = new Int16Array(0);
         this.id = player.id;
+        this.exploded = false
 
         scene.add.existing(this);
         scene.playersGroup.add(this)
@@ -106,10 +107,12 @@ class Player extends Phaser.GameObjects.Sprite {
         this.name.visible = true
         this.name.x = x - 30
         this.name.y = y - 60
+        this.exploded = false
     }
 
     explode() {
         this.name.visible = true
+        this.exploded = true
         this.play("explosion")
         var self = this;
         setTimeout(function() {
@@ -182,6 +185,7 @@ class OnlinePlayer extends Phaser.GameObjects.Sprite {
         scene.playersGroup.add(this)
         scene.physics.world.enableBody(this)
         this.setOrigin(0.5)
+        this.exploded = false
 
         this.animation = "shipLights"
 
@@ -196,6 +200,7 @@ class OnlinePlayer extends Phaser.GameObjects.Sprite {
 
     explode() {
         this.name.visible = true
+        this.exploded = true
         this.play("explosion")
         var self = this;
         setTimeout(function() {
@@ -208,6 +213,7 @@ class OnlinePlayer extends Phaser.GameObjects.Sprite {
         this.visible = true
         this.play(this.animation)
         this.name.visible = true
+        this.exploded = false
     }
     update() {
         this.move();
@@ -558,7 +564,7 @@ class Scene1 extends Phaser.Scene {
 
         this.physics.add.collider(this.lasersGroup, this.localGroup, function(laser, player) {
             console.log("Exploto")
-            if (player.id != laser.playerId) {
+            if (player.id != laser.playerId && player.exploded == false) {
                 laser.destroy();
                 player.explode()
                 self.pushToStream([socketEvents.Explode, player.id, laser.id])
