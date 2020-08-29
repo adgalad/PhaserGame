@@ -64,7 +64,7 @@ class MenuScene extends Phaser.Scene {
             current = (current+1)%7
         }, 300)
 
-        // socket = new Socket("ws://ec2-3-90-8-99.compute-1.amazonaws.com:8081");
+        socket = new Socket("ws://ec2-3-90-8-99.compute-1.amazonaws.com:8081");
         socket = new Socket("ws://0.0.0.0:8081");
         socket.socket.on("login", function(data) {
             self.login(data)
