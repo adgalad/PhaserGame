@@ -22,28 +22,13 @@ class LatencyMeter {
 
         setInterval(function() {
           self.startTime = Date.now();
-          socket.emit('ping');
+          socket.emit('pong', "");
         }, 1000);
 
-        socket.socket.on('pong', function() {
+        socket.socket.on('pong', function(data) {
             var latency = Date.now() - self.startTime;
             $("#latency").html(Math.floor(latency) + " ms")
         });
-    }
-
-    addValue(value = undefined) {
-        if (value != undefined && value != null) {
-            this.avg = ((this.avg * this.length) + value)/ (this.length+1)
-
-            this.length += 1
-
-            if (this.length % 20 == 0) {
-
-                console.log(this.avg)
-                this.length = 0;
-                this.avg = 0;
-            }
-        }
     }
 }
 
@@ -79,8 +64,8 @@ class MenuScene extends Phaser.Scene {
             current = (current+1)%7
         }, 300)
 
-        socket = new Socket("ws://ec2-3-90-8-99.compute-1.amazonaws.com:8081");
-        // socket = new Socket("ws://0.0.0.0:8081");
+        // socket = new Socket("ws://ec2-3-90-8-99.compute-1.amazonaws.com:8081");
+        socket = new Socket("ws://0.0.0.0:8081");
         socket.socket.on("login", function(data) {
             self.login(data)
         })
@@ -160,6 +145,11 @@ class Player extends Phaser.GameObjects.Sprite {
     }
 
     move() {
+        if (this.exploded) {
+            this.body.setVelocityX(0)
+            this.body.setVelocityY(0)
+            return
+        }
         var vector = {
             x: 0,
             y: 0,
@@ -230,6 +220,18 @@ class OnlinePlayer extends Phaser.GameObjects.Sprite {
         this.moves = []
     }
 
+    destroy() {
+
+        this.name.destroy()
+        var self = this;
+        var lasers = this.scene.lasersGroup.getChildren()
+        for (var i = lasers.length - 1; i >= 0; i--) {
+            if (this.id == lasers[i].playerId) {
+                lasers[i].destroy()
+            }
+        }
+        super.destroy()
+    }
     explode() {
         this.name.visible = true
         this.exploded = true
@@ -438,6 +440,17 @@ class Scene1 extends Phaser.Scene {
             }
         })
 
+        socket.socket.on("hello", function(data){
+
+
+            self.playersGroup.getChildren().forEach(function(player){
+                console.log(player.id, data)
+                if (player.id == data) {
+                    player.destroy()
+                }
+            })
+        })
+
         socket.socket.on("update", function(data) {
             var array = new Int16Array(data);
             var carrier = 0;
@@ -537,7 +550,6 @@ class Scene1 extends Phaser.Scene {
         }
 
         this.physics.add.collider(this.lasersGroup, this.playersGroup, function(laser, player) {
-            console.log("Exploto")
             if (player.id != laser.playerId && player.exploded == false) {
                 laser.destroy();
                 player.explode()
@@ -623,13 +635,7 @@ function initGame(){
     config.user = $("#character").val()
     $("#form").remove()
     var game = new Phaser.Game(config)
-    this.game.events.on('hidden',function(){
-        console.log('hidden');
-    },this);
 
-    this.game.events.on('visible',function(){
-        console.log('visible');
-    },this);
 }
 // var socket = new Socket("ws://ec2-3-90-8-99.compute-1.amazonaws.com:25330");
 // var socket = new Socket("ws://0.0.0.0:5000");

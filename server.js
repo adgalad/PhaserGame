@@ -33,6 +33,7 @@ io.on('connection', function (socket) {
             }
         }
         players[socket.id] = player
+        console.log(socket.id, players)
         // send the players object to the new player
         socket.emit('login', {"id":player["id"], "players": players});
         // update all other players of the new player
@@ -40,11 +41,11 @@ io.on('connection', function (socket) {
     })
     // when a player disconnects, remove them from our players object
     socket.on('disconnect', function () {
-        console.log('user disconnected');
         if (players[socket.id]) {
             var playerId = players[socket.id].id
             delete players[socket.id];
-            socket.broadcast.emit('disconnect', playerId);
+            console.log('user disconnected', playerId);
+            socket.broadcast.emit('hello', playerId);
         }
     });
 
@@ -53,22 +54,7 @@ io.on('connection', function (socket) {
         socket.broadcast.emit('update', data)
     })
 
-    socket.on('laser', function(data){
-        socket.broadcast.emit('laser', data)
-    })
 
-    socket.on('updateLaser', function(data){
-        socket.broadcast.emit('updateLaser', data)
-    })
-
-    socket.on('explode', function(data){
-        // console.log("EXPLODE")
-        socket.broadcast.emit('explode', data)
-    })
-
-    socket.on('ping', function(data){
-        socket.emit("pong")
-    })
 });
 
 
